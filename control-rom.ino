@@ -88,10 +88,11 @@ void writeInstruction(byte instruction, int t_start, const byte ops[3])
 {
   for (int t = 0; t < 3; ++t) {
     int address = (0x80 >> (t_start + t));
-    address = ~address & 0xF0; // Invert and mask T selector
-    instruction &= 0x0F;       // Mask instruction
+    address     = ~address; // Invert T
+    address     &= 0x3F0;   // Mask T
+    instruction &= 0x00F;   // Mask instruction
 
-    address |= instruction;    // Combine to get address
+    address |= instruction; // Combine to get address
     
     writeEEPROM(address, ops[t]);
   }
@@ -127,12 +128,12 @@ const byte HLT = 64 * ROM_2_SELECT;
 const byte NOOP = 0;
 
 // Operations
-const byte FETCH[] = {CO + MI, RO + II, CE};
-const byte LDA[] = {IO + MI, RO + AI, NOOP};
-const byte ADD[] = {IO + MI, RO + BI, EO + AI};
-const byte SUB[] = {IO + MI, RO + BI, EO + AI + SU};
-const byte OUT[] = {AO + OI, NOOP, NOOP};
-const byte HALT[] = {HLT, NOOP, NOOP};
+const byte FETCH[] = {CO | MI, RO | II, CE};
+const byte LDA[]   = {IO | MI, RO | AI, NOOP};
+const byte ADD[]   = {IO | MI, RO | BI, EO | AI};
+const byte SUB[]   = {IO | MI, RO | BI, EO | AI | SU};
+const byte OUT[]   = {AO | OI, NOOP, NOOP};
+const byte HALT[]  = {HLT, NOOP, NOOP};
 
 void setup() {
   // put your setup code here, to run once:
