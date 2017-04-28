@@ -5,7 +5,7 @@
  *     0-5: Ring counter signal (T1, T2, ...)
  *     6-10: Instruction (Zeroed for T1-T3)
  * 
- * This is for the first of two EEPROMs used to output the full control word.
+ * This is for the second of two EEPROMs used to output the full control word.
  */
 
 #define SHIFT_DATA 2
@@ -93,23 +93,23 @@ void writeInstruction(int instruction, int t_start, const byte ops[3])
 }
 
 // J-AO on rom 1
-const byte J  = 1;
-const byte CO = 2;
-const byte CE = 4;
-const byte OI = 8;
-const byte BI = 16;
-const byte SU = 32;
-const byte EO = 64;
-const byte AO = 128;
+const byte J  = 0;
+const byte CO = 0;
+const byte CE = 0;
+const byte OI = 0;
+const byte BI = 0;
+const byte SU = 0;
+const byte EO = 0;
+const byte AO = 0;
 
 // AI-HLT on rom 2
-const byte AI = 0;
-const byte II = 0;
-const byte IO = 0;
-const byte RO = 0;
-const byte RI = 0;
-const byte MI = 0;
-const byte HLT = 0;
+const byte AI = 1;
+const byte II = 2;
+const byte IO = 4;
+const byte RO = 8;
+const byte RI = 16;
+const byte MI = 32;
+const byte HLT = 64;
 
 const byte NOOP = 0;
 
