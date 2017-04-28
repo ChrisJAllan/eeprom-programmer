@@ -2,10 +2,10 @@
  * Programs an EEPROM for instruction decoding.
  * 
  * The EEPROM's input pins are:
- *     0-5: Ring counter signal (T1, T2, ...)
- *     6-10: Instruction (Zeroed for T1-T3)
+ *     0-5: Ring counter signal (T0, T1, ... inverted)
+ *     6-10: Instruction
  * 
- * This is for the second of two EEPROMs used to output the full control word.
+ * This is for either of two EEPROMs used to output the full control word.
  */
 
 #define SHIFT_DATA 2
@@ -84,35 +84,49 @@ void printContents() {
   }
 }
 
-void writeInstruction(int instruction, int t_start, const byte ops[3])
+void writeInstruction(byte instruction, int t_start, const byte ops[3])
 {
   for (int t = 0; t < 3; ++t) {
-    int address = (0x80 >> (t_start + t)) + instruction;
+    int address = (0x80 >> (t_start + t));
+    address = ~address & 0xF0; // Invert and mask T selector
+    instruction &= 0x0F;       // Mask instruction
+
+    address |= instruction;    // Combine to get address
+    
     writeEEPROM(address, ops[t]);
   }
 }
 
+
+// Program ROM 1 or 2
+#define ROM_SELECT 1
+
+const bool ROM_1_SELECT = (ROM_SELECT == 1);
+const bool ROM_2_SELECT = (ROM_SELECT == 2);
+
+// Signals
 // J-AO on rom 1
-const byte J  = 0;
-const byte CO = 0;
-const byte CE = 0;
-const byte OI = 0;
-const byte BI = 0;
-const byte SU = 0;
-const byte EO = 0;
-const byte AO = 0;
+const byte J  = 1   * ROM_1_SELECT;
+const byte CO = 2   * ROM_1_SELECT;
+const byte CE = 4   * ROM_1_SELECT;
+const byte OI = 8   * ROM_1_SELECT;
+const byte BI = 16  * ROM_1_SELECT;
+const byte SU = 32  * ROM_1_SELECT;
+const byte EO = 64  * ROM_1_SELECT;
+const byte AO = 128 * ROM_1_SELECT;
 
 // AI-HLT on rom 2
-const byte AI = 1;
-const byte II = 2;
-const byte IO = 4;
-const byte RO = 8;
-const byte RI = 16;
-const byte MI = 32;
-const byte HLT = 64;
+const byte AI  = 1  * ROM_2_SELECT;
+const byte II  = 2  * ROM_2_SELECT;
+const byte IO  = 4  * ROM_2_SELECT;
+const byte RO  = 8  * ROM_2_SELECT;
+const byte RI  = 16 * ROM_2_SELECT;
+const byte MI  = 32 * ROM_2_SELECT;
+const byte HLT = 64 * ROM_2_SELECT;
 
 const byte NOOP = 0;
 
+// Operations
 const byte FETCH[] = {CO + MI, RO + II, CE};
 const byte LDA[] = {IO + MI, RO + AI, NOOP};
 const byte ADD[] = {IO + MI, RO + BI, EO + AI};
@@ -142,7 +156,9 @@ void setup() {
 
   // Program fetch cycle
   Serial.print("Programming fetch cycle");
-  writeInstruction(0x0, 0, FETCH);
+  for (byte i = 0; i < 0x10; ++i) {
+    writeInstruction(i, 0, FETCH);
+  }
 
   Serial.print("Programming LDA");
   writeInstruction(0x0, 3, LDA);
