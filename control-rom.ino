@@ -2,11 +2,25 @@
  * Programs an EEPROM for instruction decoding.
  * 
  * The EEPROM's input pins are:
- *     0-5: Ring counter signal (T0, T1, ... inverted)
- *     6-10: Instruction
+ *     11:   0
+ *     10-6: Instruction
+ *     5-0:  Ring counter signal (T0, T1, ... inverted)
  * 
  * This is for either of two EEPROMs used to output the full control word.
+ * 
+ * Instructions taken from the SAP-1 spec:
+ *   0 LDA
+ *   1 ADD
+ *   2 SUB
+ *   E OUT
+ *   F HLT
+ * 
+ * Other instructions TBD:
+ *   LDI, STA, INC, DEC, JMP, NOP
  */
+
+// This is defined somewhere
+#undef DEC
 
 #define SHIFT_DATA 2
 #define SHIFT_CLK 3
@@ -108,34 +122,43 @@ const bool ROM_1_SELECT = (ROM_SELECT == 1);
 const bool ROM_2_SELECT = (ROM_SELECT == 2);
 
 // Signals
-// J-AO on rom 1
-const byte J  = 1   * ROM_1_SELECT;
-const byte CO = 2   * ROM_1_SELECT;
-const byte CE = 4   * ROM_1_SELECT;
-const byte OI = 8   * ROM_1_SELECT;
-const byte BI = 16  * ROM_1_SELECT;
-const byte SU = 32  * ROM_1_SELECT;
-const byte EO = 64  * ROM_1_SELECT;
-const byte AO = 128 * ROM_1_SELECT;
+// HLT-AO on ROM 1
+const byte HLT = 1   * ROM_2_SELECT;
+const byte MI  = 2   * ROM_2_SELECT;
+const byte RI  = 4   * ROM_2_SELECT;
+const byte RO  = 8   * ROM_2_SELECT;
+const byte IO  = 16  * ROM_2_SELECT;
+const byte II  = 32  * ROM_2_SELECT;
+const byte AI  = 64  * ROM_2_SELECT;
+const byte AO  = 128 * ROM_1_SELECT;
 
-// AI-HLT on rom 2
-const byte AI  = 1  * ROM_2_SELECT;
-const byte II  = 2  * ROM_2_SELECT;
-const byte IO  = 4  * ROM_2_SELECT;
-const byte RO  = 8  * ROM_2_SELECT;
-const byte RI  = 16 * ROM_2_SELECT;
-const byte MI  = 32 * ROM_2_SELECT;
-const byte HLT = 64 * ROM_2_SELECT;
+// EO-J on ROM 2
+const byte EO = 1   * ROM_1_SELECT;
+const byte SU = 2   * ROM_1_SELECT;
+const byte BI = 4   * ROM_1_SELECT;
+const byte OI = 8   * ROM_1_SELECT;
+const byte CE = 16  * ROM_1_SELECT;
+const byte CO = 32  * ROM_1_SELECT;
+const byte J  = 64  * ROM_1_SELECT;
 
 const byte NOOP = 0;
 
 // Operations
 const byte FETCH[] = {CO | MI,  RO | II,  CE};
-const byte LDA[]   = {IO | MI,  RO | AI,  NOOP};
-const byte ADD[]   = {IO | MI,  RO | BI,  EO | AI};
-const byte SUB[]   = {IO | MI,  RO | BI,  EO | AI | SU};
-const byte OUT[]   = {AO | OI,  NOOP,     NOOP};
-const byte HALT[]  = {HLT,      NOOP,     NOOP};
+
+const byte LDA[]   = {IO | MI,  RO | AI,       NOOP};         // A = RAM[X]
+const byte ADD[]   = {IO | MI,  RO | BI,       EO | AI};      // A = A + RAM[X]
+const byte SUB[]   = {IO | MI,  RO | BI,       EO | AI | SU}; // A = A - RAM[X]
+
+const byte LDI[]   = {IO | AI,  NOOP,          NOOP};         // A = X
+const byte STA[]   = {IO | MI,  AO | RI,       NOOP};         // RAM[X] = A
+const byte INC[]   = {IO | BI,  EO | AI,       NOOP};         // A = A + X
+const byte DEC[]   = {IO | BI,  EO | AI | SU,  NOOP};         // A = A - X
+const byte JMP[]   = {IO | J,   NOOP,          NOOP};         // GOTO X
+const byte NOP[]   = {NOOP,     NOOP,          NOOP};
+
+const byte OUT[]   = {AO | OI,  NOOP,          NOOP};         // OUT = A
+const byte HALT[]  = {HLT,      NOOP,          NOOP};
 
 void setup() {
   // put your setup code here, to run once:
